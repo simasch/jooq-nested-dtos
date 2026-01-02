@@ -2,41 +2,43 @@ package ch.martinelli.demo.nested.api;
 
 import ch.martinelli.demo.nested.TestcontainersConfiguration;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import org.springframework.test.web.servlet.client.RestTestClient;
 
 @Import(TestcontainersConfiguration.class)
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class OrderControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @LocalServerPort
+    private int port;
 
     @Test
-    void getPurchaseOrders_returnsOrders() throws Exception {
-        mockMvc.perform(get("/orders"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].id").exists())
-                .andExpect(jsonPath("$[0].orderDate").exists())
-                .andExpect(jsonPath("$[0].customer").exists())
-                .andExpect(jsonPath("$[0].customer.id").exists())
-                .andExpect(jsonPath("$[0].customer.firstName").exists())
-                .andExpect(jsonPath("$[0].customer.lastName").exists())
-                .andExpect(jsonPath("$[0].items").isArray())
-                .andExpect(jsonPath("$[0].items[0].id").exists())
-                .andExpect(jsonPath("$[0].items[0].quantity").exists())
-                .andExpect(jsonPath("$[0].items[0].product").exists())
-                .andExpect(jsonPath("$[0].items[0].product.name").exists())
-                .andExpect(jsonPath("$[0].items[0].product.price").exists());
+    void getPurchaseOrders_returnsOrders() {
+        RestTestClient client = RestTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
+
+        client.get().uri("/orders")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$").isArray()
+                .jsonPath("$[0].id").exists()
+                .jsonPath("$[0].orderDate").exists()
+                .jsonPath("$[0].customer").exists()
+                .jsonPath("$[0].customer.id").exists()
+                .jsonPath("$[0].customer.firstName").exists()
+                .jsonPath("$[0].customer.lastName").exists()
+                .jsonPath("$[0].items").isArray()
+                .jsonPath("$[0].items[0].id").exists()
+                .jsonPath("$[0].items[0].quantity").exists()
+                .jsonPath("$[0].items[0].product").exists()
+                .jsonPath("$[0].items[0].product.name").exists()
+                .jsonPath("$[0].items[0].product.price").exists();
     }
 }
